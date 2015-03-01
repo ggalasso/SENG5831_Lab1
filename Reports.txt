@@ -1,3 +1,5 @@
+Spring 2015 Lab 1 Submission
+
 REPORT 1:
 
 1. I originally found the value of my for loop in a separate program, that value was 5588. 2. However I decided to test that out in the lab program and timed the value in the main method. The new value was 5394. I'm not sure why there is such a large discrepancy.
