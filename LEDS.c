@@ -130,10 +130,11 @@ void set_toggle(char color, int ms) {
         LED_TOGGLE(YELLOW);
         G_yellow_toggles++;
     }
-     sei();
+    /*sei();
      for (int i=0;i<51;i++) {
          WAIT_10MS;
      }
+     /*
 }
 
 // INTERRUPT HANDLER for green LED
