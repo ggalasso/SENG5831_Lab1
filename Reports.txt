@@ -138,3 +138,8 @@ REPORT 6:
 3. 510ms busy wait inside the yellow ISR with SEI() enabled.
 
 4. Again no console input. The yellow and green seem to be firing like they would normally. Can the yellow interrupt, interrupt itself? That would be the explanation for why the yellow isn't delayed as it was in report 5. 
+
+
+Final Thoughts:
+
+I realized afterwards that I was adding my busy wait after the check for toggle statement in the yellow ISR, and after the increment in the green ISR. I guess this could have some change on the behaviour of yellow, since it's allowed to update it's status before doing a wait. If it had to wait before updating it's status then it would have likely been further delayed. 
