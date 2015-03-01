@@ -1,0 +1,138 @@
+REPORT 1:
+
+1. I originally found the value of my for loop in a separate program, that value was 5588. 2. However I decided to test that out in the lab program and timed the value in the main method. The new value was 5394. I'm not sure why there is such a large discrepancy.
+3. When testing out my new value I also noticed that larger iterations changed the problem, for example if I ran it for 5394000 loops it would be slightly off, a reduction in that number would be necessary to make it more precise, but when taking that number (say 5290) and using it for only 10ms it would turn out to be only 9ms. 
+4. My first run of the program to toggle red with a for loop resulted in this: 
+
+Menu: {TPZ} {RGYA} <int>: ZA1000
+0p:Z C:A V:1000
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:1000
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1000
+Toggles R:61 G:62 Y:61
+Menu: {TPZ} {RGYA} <int>:
+
+5. The menu was incredible unresponsive, I'm guessing this was because we were running a bunch of loops in between each blink of the red light to calculate the time (a loop to calculate the wait 10 second loop, which is a loop itself). Any menu entries in such a system might delay the calculate of the red time.  
+
+
+
+REPORT 2:
+
+1. Not entirely sure why my red and green are one above my yellow so I decided to run it again.
+
+Menu: {TPZ} {RGYA} <int>: TA1000
+0p:T C:A V:1000
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:1024
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1024
+Toggles R:61 G:61 Y:60
+Menu: {TPZ} {RGYA} <int>: 
+
+Menu: {TPZ} {RGYA} <int>: TA1000
+0p:T C:A V:1000
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:0
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1024
+Toggles R:60 G:61 Y:60
+Menu: {TPZ} {RGYA} <int>: 
+
+2. This was still not what I expected so I decided to take a look at the green. I had phase correct mode 10, and decided to change my COMP1A1 and COMP1B1 from 1/0 (clear on up count set on down count) to 1/1  (set on up count clear on down count). I think that might have been throwing off things by 1 for green by counting it earlier than the others. 
+
+Menu: {TPZ} {RGYA} <int>: TA1000
+0p:T C:A V:1000
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:1024
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1024
+Toggles R:61 G:61 Y:61
+Menu: {TPZ} {RGYA} <int>:
+
+3. This is more in line with what I was expecting. 
+
+REPORT 3
+
+1. 90ms busy wait inside the green ISR. 
+
+2. Yellow and green were about the same, but red was forced out of sending some interrupts and thus getting its toggles in. This is probably due to the fact that we are spending 90ms inside the green interrupt and stopping red to fire the 90 interrupts it would normally fire inside that time period. So every 500ms green is causing red to lose ~90 interrupts. Under these conditions red would fire ~49200 interrupts over a 60 second period, which is ~98.5 toggles. Essentially red is appearing starved for 1/6th of it's normal time. 
+
+Menu: {TPZ} {RGYA} <int>TA500
+0p:T C:A V:500
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:1024
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:512
+Toggles R:101 G:121 Y:121
+
+3. 90ms busy wait inside the yellow ISR. 
+
+4. In the below run red was even more starved for cycles. So every 100 ms (the time for yellow to fire it's interrupts) we need to wait 90ms inside that interrupt. That would mean red gets locked out of ~450 interrupts every 500ms. So I would have expected it to only be running at 1/10th of it's normal toggles, but the results showed 1/6th.
+
+Menu: {TPZ} {RGYA} <int>: TA500
+0p:T C:A V:500
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:256
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1024
+Toggles R:19 G:121 Y:122
+Menu: {TPZ} {RGYA} <int>:
+
+5. I let the program run for awhile longer as I was typing up the report and checked the toggles again. This is more in line with what I originally expected, that red would be closer to 10% of it's normal toggles. 
+
+Toggles R:382 G:2387 Y:2387
+
+
+REPORT 4:
+
+1. 110ms busy wait inside the green ISR.
+
+2. Seemed to operate similar to report 3, except red was a little more starved for time. Now every 500ms it's missing 110 interrupts rather than 90. That means it's missing 22% of it's interrupts, and the below results show it missing roughly 21% (95 of 120). 
+
+Menu: {TPZ} {RGYA} <int>:TA500
+0p:T C:A V:500
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:23040
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:1024
+Toggles R:95 G:120 Y:120
+Menu: {TPZ} {RGYA} <int>:
+
+3. 110 ms busy wait inside the yellow ISR. 
+
+4. I was unable to send input through the terminal. Visual observation was that red LED was never firing. Yellow and green both seemed to fire around the same rate they would normally. Green should be unaffected (PWM), while yellow appeared just slightly slower. My guess is the 110 ms wait was causing yellow to wait 10ms longer than it would normally. 
+
+5. I'm not sure why red never seems to fire, even though the datasheet seems to indicate that TIMER0_COMPA should have a higher priority than TIMER3_COMPA? I initially wondered if it was firing some interrupts but just not enough to reach 1000 (and trigger the LED), so I changed the period to 1 for RED, but I still did not see any toggles of the LED. 
+
+
+REPORT 5:
+
+1. 510ms busy wait inside the green ISR. 
+
+2. Terminal seemed slower than normal and the results shows that green was unaffected by the busy wait inside itself. Yellow and red were both much slower than they would normally be. Waiting for 510ms was slowing down the interrupts to fire for both yellow and red. My guess is yellow toggles more often because it needs less total interrupts to trigger, while red takes much longer to reach the 500 interrupt it needs to trigger. 
+
+Menu: {TPZ} {RGYA} <int>: TA500
+0p:T C:A V:500
+Menu: {TPZ} {RGYA} <int>: ZA
+0p:Z C:A V:1024
+Menu: {TPZ} {RGYA} <int>: PA
+0p:P C:A V:256
+Toggles R:5 G:121 Y:24
+Menu: {TPZ} {RGYA} <int>:
+
+3. 510ms busy wait inide the yellow ISR.
+
+4. I hard coded the period for 500ms since console input was not functional. My expectation was that yellow would trigger every ~2.5 seconds (the time of it's busy wait for it to reach the number of necessary interrupts. Visual observation seemed to back this up. As in earlier experiments red was locked out. While green was unaffected. 
+
+5. I take back my earlier statement, if you wait long enough Red eventually fires! This means that some red interrupts are getting through, just not enough to reach the 500 needed in any measurable time. 
+
+REPORT 6:
+
+1. 510ms busy wait inside the green ISR with SEI() enabled. 
+
+2. Console input seems to be disabled. Red seems to also be starved for cycles and not blinking. Yellow and green seem to blinking almost as normal. The difference here and in report 5 is the yellow isn't delayed, it appears that allowing sei allows the yellow interrupt to fire even while waiting inside the green. My guess is this would cause the green to be slightly delayed and also stop any other actions (like console) input from working since the system is dealing with interrupts the entire time. 
+
+3. 510ms busy wait inside the yellow ISR with SEI() enabled.
+
+4. Again no console input. The yellow and green seem to be firing like they would normally. Can the yellow interrupt, interrupt itself? That would be the explanation for why the yellow isn't delayed as it was in report 5. 
